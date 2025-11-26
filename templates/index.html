@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ganesh – Voice Interview Bot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 0% 0%, #1d4ed8 0, transparent 55%),
+        radial-gradient(circle at 100% 100%, #a855f7 0, transparent 55%),
+        #020617;
+      color: #e5e7eb;
+    }
+    .card {
+      width: 100%;
+      max-width: 720px;
+      padding: 24px 22px 18px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.85));
+      border: 1px solid rgba(148,163,184,0.35);
+      box-shadow:
+        0 18px 45px rgba(15,23,42,0.7),
+        0 0 0 1px rgba(15,23,42,0.8);
+      backdrop-filter: blur(18px);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .title-block h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: 0.04em;
+    }
+    .title-block p {
+      margin: 3px 0 0;
+      font-size: 0.82rem;
+      color: #9ca3af;
+    }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: radial-gradient(circle at 0% 0%, #22c55e, #16a34a);
+      color: #022c22;
+      font-weight: 600;
+      border: 1px solid rgba(34,197,94,0.5);
+      box-shadow: 0 0 15px rgba(34,197,94,0.5);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 4px;
+    }
+    button {
+      border: none;
+      padding: 8px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+      white-space: nowrap;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    button:not(:disabled):active {
+      transform: scale(0.97);
+      box-shadow: none;
+    }
+    #recordBtn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #022c22;
+      box-shadow: 0 0 18px rgba(34,197,94,0.5);
+    }
+    #stopListenBtn {
+      background: rgba(55,65,81,0.9);
+      color: #e5e7eb;
+    }
+    #stopVoiceBtn {
+      background: rgba(30,64,175,0.9);
+      color: #e5e7eb;
+    }
+    #clearBtn {
+      background: transparent;
+      color: #9ca3af;
+      border: 1px solid rgba(75,85,99,0.8);
+    }
+    #status {
+      min-height: 1.2em;
+      font-size: 0.78rem;
+      color: #a5b4fc;
+      margin-top: 2px;
+    }
+    .chips {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      border: 1px solid rgba(148,163,184,0.5);
+      color: #e5e7eb;
+      cursor: pointer;
+      background: rgba(15,23,42,0.9);
+      transition: background 0.15s ease, transform 0.08s ease, border-color 0.15s ease;
+    }
+    .chip:hover {
+      background: rgba(30,64,175,0.7);
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+    }
+    #chat {
+      max-height: 330px;
+      overflow-y: auto;
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 16px;
+      background: radial-gradient(circle at 0% 0%, rgba(15,23,42,0.9), rgba(15,23,42,0.96));
+      border: 1px solid rgba(55,65,81,0.9);
+    }
+    .bubble {
+      padding: 9px 11px;
+      border-radius: 12px;
+      margin: 5px 0;
+      max-width: 82%;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      position: relative;
+    }
+    .user {
+      margin-left: auto;
+      background: linear-gradient(135deg, #1d4ed8, #38bdf8);
+      color: #e5f3ff;
+      border-radius: 12px 12px 2px 12px;
+    }
+    .bot {
+      margin-right: auto;
+      background: rgba(15,23,42,0.95);
+      border-radius: 12px 12px 12px 2px;
+      border: 1px solid rgba(148,163,184,0.5);
+    }
+    .role-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.6;
+      margin-bottom: 2px;
+    }
+    #typedInput {
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.9);
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      outline: none;
+    }
+    #typedInput::placeholder {
+      color: #6b7280;
+    }
+    #sendBtn {
+      margin-top: 8px;
+      width: 100%;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #e5e7eb;
+      box-shadow: 0 0 16px rgba(59,130,246,0.6);
+    }
+    .footer-note {
+      margin-top: 10px;
+      font-size: 0.72rem;
+      color: #9ca3af;
+      text-align: center;
+    }
+    @media (max-width: 640px) {
+      .card {
+        margin: 10px;
+        padding: 18px 16px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="title-block">
+        <h1>Ganesh – AI Interview Voice Bot</h1>
+        <p>Ask me interview questions by voice or text. I’ll answer as I would in a real interview.</p>
+      </div>
+      <div class="badge">AI Agent · 21</div>
+    </div>
+
+    <div class="controls">
+      <button id="recordBtn">🎙️ Start Talking</button>
+      <button id="stopListenBtn" disabled>⏹️ Stop Listening</button>
+      <button id="stopVoiceBtn">🔇 Stop Voice</button>
+      <button id="clearBtn">🧹 Clear Chat</button>
+    </div>
+    <div id="status"></div>
+
+    <div class="chips">
+      <div class="chip">Tell me your life story.</div>
+      <div class="chip">What’s your #1 superpower?</div>
+      <div class="chip">Top 3 areas you want to grow in?</div>
+      <div class="chip">How do you push your limits?</div>
+      <div class="chip">Explain your missing person project.</div>
+    </div>
+
+    <div id="chat"></div>
+
+    <input id="typedInput" placeholder="Or type a question, e.g. “Why should 100x hire you?”" />
+    <button id="sendBtn">Send</button>
+
+    <div class="footer-note">
+      Tip: You can stop the voice at any time with “🔇 Stop Voice”.
+    </div>
+  </div>
+
+  <script>
+    const recordBtn = document.getElementById("recordBtn");
+    const stopListenBtn = document.getElementById("stopListenBtn");
+    const stopVoiceBtn = document.getElementById("stopVoiceBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const statusEl = document.getElementById("status");
+    const chatEl = document.getElementById("chat");
+    const typedInput = document.getElementById("typedInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const chips = document.querySelectorAll(".chip");
+
+    let recognition;
+    let recognizing = false;
+    let history = [];
+    let selectedVoice = null;
+
+    // ---- Voice selection (younger / natural English voice) ----
+    function loadVoices() {
+      const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      if (!voices || !voices.length) return;
+
+      selectedVoice =
+        voices.find(v => v.name.includes("Google UK English Male")) ||
+        voices.find(v => v.name.includes("Google US English")) ||
+        voices.find(v => v.lang === "en-IN" && v.name.toLowerCase().includes("male")) ||
+        voices[0];
+    }
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    // ---- Text-to-speech with stop support ----
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (selectedVoice) utterance.voice = selectedVoice;
+
+      utterance.rate = 1.02;
+      utterance.pitch = 0.98;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+
+    stopVoiceBtn.addEventListener("click", () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        statusEl.textContent = "Voice stopped.";
+        setTimeout(() => { if (statusEl.textContent === "Voice stopped.") statusEl.textContent = ""; }, 900);
+      }
+    });
+
+    // ---- Add message to chat UI ----
+    function addMessage(text, role) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "bubble " + (role === "user" ? "user" : "bot");
+
+      const label = document.createElement("div");
+      label.className = "role-label";
+      label.textContent = role === "user" ? "YOU" : "GANESH BOT";
+
+      const body = document.createElement("div");
+      body.textContent = text;
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(body);
+
+      chatEl.appendChild(wrapper);
+      chatEl.scrollTop = chatEl.scrollHeight;
+
+      history.push({ role: role === "user" ? "user" : "assistant", content: text });
+    }
+
+    // ---- Speech recognition ----
+    function setupRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        statusEl.textContent = "Speech recognition is not supported in this browser. Try Chrome.";
+        recordBtn.disabled = true;
+        stopListenBtn.disabled = true;
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        recognizing = true;
+        statusEl.textContent = "Listening… ask your question.";
+      };
+      recognition.onend = () => {
+        recognizing = false;
+        recordBtn.disabled = false;
+        stopListenBtn.disabled = true;
+        if (!statusEl.textContent.startsWith("Thinking")) {
+          statusEl.textContent = "";
+        }
+      };
+      recognition.onerror = (event) => {
+        recognizing = false;
+        recordBtn.disabled = false;
+        stopListenBtn.disabled = true;
+        console.error("Recognition error:", event);
+        statusEl.textContent = "Could not hear clearly. Please try again.";
+      };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        addMessage(transcript, "user");
+        sendToServer(transcript);
+      };
+    }
+
+    // ---- Send text to backend ----
+    async function sendToServer(message) {
+      statusEl.textContent = "Thinking…";
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, history }),
+        });
+        const data = await res.json();
+        if (data.reply) {
+          addMessage(data.reply, "bot");
+          speak(data.reply);
+          statusEl.textContent = "";
+        } else {
+          statusEl.textContent = "Error from server.";
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error. Please try again.";
+      }
+    }
+
+    // ---- Event listeners ----
+    recordBtn.addEventListener("click", () => {
+      if (!recognition) return;
+      if (!recognizing) {
+        recordBtn.disabled = true;
+        stopListenBtn.disabled = false;
+        recognition.start();
+      }
+    });
+
+    stopListenBtn.addEventListener("click", () => {
+      if (recognition && recognizing) {
+        recognition.stop();
+      }
+    });
+
+    sendBtn.addEventListener("click", () => {
+      const text = typedInput.value.trim();
+      if (!text) return;
+      typedInput.value = "";
+      addMessage(text, "user");
+      sendToServer(text);
+    });
+
+    typedInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      chatEl.innerHTML = "";
+      history = [];
+      statusEl.textContent = "Chat cleared.";
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      setTimeout(() => { if (statusEl.textContent === "Chat cleared.") statusEl.textContent = ""; }, 900);
+    });
+
+    chips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        const text = chip.textContent.trim();
+        addMessage(text, "user");
+        sendToServer(text);
+      });
+    });
+
+    setupRecognition();
+  </script>
+</body>
+</html>
