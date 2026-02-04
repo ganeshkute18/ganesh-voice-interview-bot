@@ -122,6 +122,57 @@
       flex-wrap: wrap;
       gap: 6px;
     }
+    .resume-card {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(59,130,246,0.35);
+      background: rgba(15,23,42,0.85);
+    }
+    .resume-card h2 {
+      margin: 0 0 6px;
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+    }
+    .resume-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    #resumeInput {
+      flex: 1;
+      min-width: 180px;
+      color: #cbd5f5;
+      background: rgba(15,23,42,0.95);
+      border: 1px dashed rgba(148,163,184,0.6);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+    #uploadBtn {
+      background: linear-gradient(135deg, #f97316, #f59e0b);
+      color: #2a1200;
+      box-shadow: 0 0 16px rgba(249,115,22,0.5);
+    }
+    #resumeStatus {
+      min-height: 1em;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #fbbf24;
+    }
+    #resumeOutput {
+      margin-top: 8px;
+      width: 100%;
+      min-height: 120px;
+      border-radius: 12px;
+      border: 1px solid rgba(55,65,81,0.9);
+      padding: 10px 12px;
+      background: rgba(2,6,23,0.65);
+      color: #e2e8f0;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      resize: vertical;
+    }
     .chip {
       padding: 5px 10px;
       border-radius: 999px;
@@ -235,6 +286,16 @@
       <div class="chip">Explain your missing person project.</div>
     </div>
 
+    <div class="resume-card">
+      <h2>Resume Upload</h2>
+      <div class="resume-actions">
+        <input id="resumeInput" type="file" accept=".pdf,.docx" />
+        <button id="uploadBtn">📄 Upload Resume</button>
+      </div>
+      <div id="resumeStatus"></div>
+      <textarea id="resumeOutput" placeholder="Extracted resume text will appear here..." readonly></textarea>
+    </div>
+
     <div id="chat"></div>
 
     <input id="typedInput" placeholder="Or type a question, e.g. “Why should 100x hire you?”" />
@@ -255,6 +316,10 @@
     const typedInput = document.getElementById("typedInput");
     const sendBtn = document.getElementById("sendBtn");
     const chips = document.querySelectorAll(".chip");
+    const resumeInput = document.getElementById("resumeInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const resumeStatus = document.getElementById("resumeStatus");
+    const resumeOutput = document.getElementById("resumeOutput");
 
     let recognition;
     let recognizing = false;
@@ -384,6 +449,36 @@
       }
     }
 
+    async function uploadResume() {
+      const file = resumeInput.files[0];
+      if (!file) {
+        resumeStatus.textContent = "Please choose a PDF or DOCX file.";
+        return;
+      }
+      resumeStatus.textContent = "Uploading and extracting...";
+      resumeOutput.value = "";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/upload_resume", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          resumeStatus.textContent = data.error || "Upload failed.";
+          return;
+        }
+        resumeStatus.textContent = `Uploaded ${data.filename}.`;
+        resumeOutput.value = data.text || "";
+      } catch (err) {
+        console.error(err);
+        resumeStatus.textContent = "Network error while uploading.";
+      }
+    }
+
     // ---- Event listeners ----
     recordBtn.addEventListener("click", () => {
       if (!recognition) return;
@@ -430,6 +525,8 @@
         sendToServer(text);
       });
     });
+
+    uploadBtn.addEventListener("click", uploadResume);
 
     setupRecognition();
   </script>
