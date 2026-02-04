@@ -122,7 +122,8 @@ def _is_allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def parse_resume(file_bytes, filename):
+def extract_resume_text(file_bytes, filename):
+    """Extract resume text from PDF or DOCX and normalize whitespace."""
     if filename.lower().endswith(".pdf"):
         raw_text = _extract_text_from_pdf(file_bytes)
     elif filename.lower().endswith(".docx"):
@@ -130,6 +131,10 @@ def parse_resume(file_bytes, filename):
     else:
         raise ValueError("Unsupported file type.")
     return _clean_text(raw_text)
+
+
+def parse_resume(file_bytes, filename):
+    return extract_resume_text(file_bytes, filename)
 
 
 @app.route("/")
@@ -186,7 +191,7 @@ def upload_resume():
         with open(save_path, "wb") as saved_file:
             saved_file.write(file_bytes)
 
-        cleaned_text = parse_resume(file_bytes, filename)
+        cleaned_text = extract_resume_text(file_bytes, filename)
     except Exception as exc:
         print("Resume parsing error:", exc)
         return jsonify({"error": "Failed to parse resume file."}), 500
