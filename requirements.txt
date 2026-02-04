@@ -2,3 +2,5 @@ flask
 flask-cors
 groq
 gunicorn
+pdfplumber
+python-docx
