@@ -95,6 +95,10 @@ RULES:
 - Be honest: if you don’t know something, say so and explain how you’d figure it out.
 """
 
+QUESTION_SYSTEM_PROMPT = """
+You generate concise, role-relevant interview questions based on a resume and job role.
+Return exactly one interview question in a single sentence. Do not add extra text.
+"""
 
 ALLOWED_EXTENSIONS = {"pdf", "docx"}
 
@@ -135,6 +139,27 @@ def extract_resume_text(file_bytes, filename):
 
 def parse_resume(file_bytes, filename):
     return extract_resume_text(file_bytes, filename)
+
+def generate_interview_question(resume_text, job_role):
+    messages = [
+        {"role": "system", "content": QUESTION_SYSTEM_PROMPT.strip()},
+        {
+            "role": "user",
+            "content": (
+                "Resume:\n"
+                f"{resume_text}\n\n"
+                "Target role:\n"
+                f"{job_role}\n\n"
+                "Generate one interview question."
+            ),
+        },
+    ]
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=messages,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
 
 
 @app.route("/")
@@ -197,6 +222,23 @@ def upload_resume():
         return jsonify({"error": "Failed to parse resume file."}), 500
 
     return jsonify({"filename": filename, "text": cleaned_text})
+
+
+@app.route("/generate_question", methods=["POST"])
+def generate_question():
+    data = request.get_json() or {}
+    resume_text = data.get("resume_text", "").strip()
+    job_role = data.get("job_role", "").strip()
+
+    if not resume_text or not job_role:
+        return jsonify({"error": "resume_text and job_role are required."}), 400
+
+    try:
+        question = generate_interview_question(resume_text, job_role)
+        return jsonify({"question": question})
+    except Exception as exc:
+        print("Question generation error:", exc)
+        return jsonify({"error": "Failed to generate interview question."}), 500
 
 
 if __name__ == "__main__":
