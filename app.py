@@ -1,7 +1,12 @@
+import io
 import os
+import re
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from groq import Groq
+import pdfplumber
+from docx import Document
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)
@@ -89,6 +94,32 @@ RULES:
 """
 
 
+ALLOWED_EXTENSIONS = {"pdf", "docx"}
+
+
+def _clean_text(text):
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _extract_text_from_pdf(file_bytes):
+    text_chunks = []
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text_chunks.append(page_text)
+    return "\n".join(text_chunks)
+
+
+def _extract_text_from_docx(file_bytes):
+    document = Document(io.BytesIO(file_bytes))
+    return "\n".join(paragraph.text for paragraph in document.paragraphs)
+
+
+def _is_allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 
 
 @app.route("/")
@@ -121,6 +152,36 @@ def chat():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": "Something went wrong on the server."}), 500
+
+
+@app.route("/upload_resume", methods=["POST"])
+def upload_resume():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided."}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected."}), 400
+
+    if not _is_allowed_file(file.filename):
+        return jsonify({"error": "Unsupported file type. Upload PDF or DOCX."}), 400
+
+    filename = secure_filename(file.filename)
+    file_bytes = file.read()
+    if not file_bytes:
+        return jsonify({"error": "Empty file provided."}), 400
+
+    try:
+        if filename.lower().endswith(".pdf"):
+            raw_text = _extract_text_from_pdf(file_bytes)
+        else:
+            raw_text = _extract_text_from_docx(file_bytes)
+    except Exception as exc:
+        print("Resume parsing error:", exc)
+        return jsonify({"error": "Failed to parse resume file."}), 500
+
+    cleaned_text = _clean_text(raw_text)
+    return jsonify({"filename": filename, "text": cleaned_text})
 
 
 if __name__ == "__main__":
