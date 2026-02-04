@@ -10,6 +10,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Groq client – reads GROQ_API_KEY from your environment
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -120,6 +122,14 @@ def _is_allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def parse_resume(file_bytes, filename):
+    if filename.lower().endswith(".pdf"):
+        raw_text = _extract_text_from_pdf(file_bytes)
+    elif filename.lower().endswith(".docx"):
+        raw_text = _extract_text_from_docx(file_bytes)
+    else:
+        raise ValueError("Unsupported file type.")
+    return _clean_text(raw_text)
 
 
 @app.route("/")
@@ -172,15 +182,15 @@ def upload_resume():
         return jsonify({"error": "Empty file provided."}), 400
 
     try:
-        if filename.lower().endswith(".pdf"):
-            raw_text = _extract_text_from_pdf(file_bytes)
-        else:
-            raw_text = _extract_text_from_docx(file_bytes)
+        save_path = os.path.join(UPLOAD_DIR, filename)
+        with open(save_path, "wb") as saved_file:
+            saved_file.write(file_bytes)
+
+        cleaned_text = parse_resume(file_bytes, filename)
     except Exception as exc:
         print("Resume parsing error:", exc)
         return jsonify({"error": "Failed to parse resume file."}), 500
 
-    cleaned_text = _clean_text(raw_text)
     return jsonify({"filename": filename, "text": cleaned_text})
 
 
