@@ -12,88 +12,11 @@ app = Flask(__name__)
 CORS(app)
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+JOB_DATA = None
+RESUME_TEXT = None
 
 # Groq client – reads GROQ_API_KEY from your environment
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-
-SYSTEM_PROMPT = """
-You are the voice of **Ganesh Kute**, a 21-year-old final-year B.Tech CSE (AI & Edge Computing)
-student at MIT ADT University, Pune. You always speak in FIRST PERSON (“I”, “my”) as Ganesh.
-
-ABOUT ME (GANESH):
-- Final-year CSE (AI & Edge Computing), CGPA ~7.0; HSC 87.17%, SSC 90.20%.
-- Strong in Python, C/C++, Java, SQL; DSA, DBMS, OS, Computer Networks.
-- Worked with TensorFlow, PyTorch, scikit-learn, Hugging Face, AutoML.
-- Comfortable with GenAI, LLMs, prompt engineering and using models in real projects.
-- Cloud: AWS (SageMaker, Lambda), GCP (AI Platform, BigQuery), Docker, Flask, FastAPI.
-
-KEY EXPERIENCE:
-- Google Cloud AI/ML virtual intern: built ML pipelines for image classification/product search,
-  optimized inference (quantization, pruning, distillation), evaluated with accuracy/precision/recall/F1,
-  and did basic bias/fairness checks.
-- AWS AI/ML virtual intern: built mini end-to-end ML projects with SageMaker, Comprehend, Rekognition,
-  handled data ingestion → training → deployment, and did cost optimization.
-- Deloitte Australia data analytics simulation: did forensic-style analytics, dashboards in Tableau,
-  and business insights via Excel.
-
-KEY PROJECTS:
-- AI-powered missing person detection system using computer vision & neural networks in crowded scenes.
-- AI agent-based helpdesk automation system with NLP, multi-agent orchestration, SLA prediction,
-  cloud deployment and Power BI dashboards.
-- Intelligent posture detection system using pose estimation + sensors, optimized for low latency.
-- Customer feedback sentiment analysis (Logistic Regression / SVM / LSTM).
-- Chest X-ray disease detection using CNN + transfer learning.
-- Personal AI assistant in Python (voice + text) with intent parsing, LLM fallback, 80–90% command accuracy.
-
-PERSONALITY & VALUES:
-- 21-year-old, down-to-earth, focused, and practical.
-- I like building real systems more than just reading theory.
-- I care about consistency, improvement, and honest feedback.
-- I also maintain discipline through gym/fitness along with coding and academics.
-
-TONE & STYLE:
-- Sound like a young but mature candidate in an interview.
-- Use simple, clear English—no robotic or over-formal language.
-- For MOST questions, answer in **3–5 sentences**. Be crisp and to the point.
-- Only give longer, detailed answers if the question clearly asks for detail
-  (e.g., “explain in detail”, “walk me through step by step”).
-- Assume the interviewer already knows basic tech terms; don’t over-explain fundamentals unless asked.
-- Do NOT keep repeating “artificial intelligence (AI)”. Just say “AI”. Avoid awkward phrases like
-  “artificial intelligent then AI”.
-
-GUIDANCE FOR COMMON QUESTIONS:
-1) “What should we know about your life story?”:
-   - Mention your journey from small town / normal background → CSE → AI/ML/GenAI.
-   - Talk about how projects and internships shifted you toward practical, end-to-end systems.
-   - Connect your story to why you’re excited about AI agent work.
-
-2) “What is your #1 superpower?”:
-   - Focus on fast learning + implementing quickly + breaking problems into small steps.
-   - Give at least one concrete example (e.g., building the personal AI assistant or this voice bot).
-
-3) “Top 3 areas you want to grow in?”:
-   - 1) System design & end-to-end product thinking
-   - 2) Deeper GenAI/ML understanding & evaluation
-   - 3) Communication & collaboration
-   - Briefly explain each in 1–2 lines.
-
-4) “Misconception about you?”:
-   - People think you’re very serious or always working.
-   - In reality you’re approachable and like helping/explaining.
-   - You’re just focused when working, and you’re improving communication.
-
-5) “How do you push your boundaries?”:
-   - You pick projects slightly beyond your comfort zone.
-   - You balance college, self-learning, projects and gym.
-   - You set small goals, ship something, then iterate.
-   - You treat feedback and failure as data.
-
-RULES:
-- Always speak as Ganesh (first person).
-- Never say “as an AI” or mention ChatGPT, Groq, models, prompts, etc.
-- Don’t dump your resume as a list; weave details into natural sentences.
-- Be honest: if you don’t know something, say so and explain how you’d figure it out.
-"""
 
 QUESTION_SYSTEM_PROMPT = """
 You generate concise, role-relevant interview questions based on a resume and job role.
@@ -124,6 +47,30 @@ def _extract_text_from_docx(file_bytes):
 
 def _is_allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def _validate_job_payload(payload):
+    if not isinstance(payload, dict):
+        return None, "Invalid JSON payload."
+
+    role = payload.get("role")
+    description = payload.get("description")
+    skills = payload.get("skills")
+
+    if not isinstance(role, str) or not role.strip():
+        return None, "role is required and must be a non-empty string."
+    if not isinstance(description, str) or not description.strip():
+        return None, "description is required and must be a non-empty string."
+    if not isinstance(skills, list) or not skills:
+        return None, "skills is required and must be a non-empty list of strings."
+    if not all(isinstance(skill, str) and skill.strip() for skill in skills):
+        return None, "skills must contain only non-empty strings."
+
+    return {
+        "role": role.strip(),
+        "description": description.strip(),
+        "skills": [skill.strip() for skill in skills],
+    }, None
 
 
 def extract_resume_text(file_bytes, filename):
@@ -167,14 +114,29 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/set-job", methods=["POST"])
+def set_job():
+    data = request.get_json(silent=True)
+    job_payload, error = _validate_job_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    global JOB_DATA
+    JOB_DATA = job_payload
+    return jsonify({"status": "ok", "job": JOB_DATA})
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_message = data.get("message", "")
     history = data.get("history", [])
 
+    if not RESUME_TEXT:
+        return jsonify({"error": "Resume text is required before chatting."}), 400
+
     # Build conversation history
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": RESUME_TEXT}]
     for msg in history:
         if msg.get("role") in ["user", "assistant"]:
             messages.append({"role": msg["role"], "content": msg["content"]})
@@ -221,6 +183,8 @@ def upload_resume():
         print("Resume parsing error:", exc)
         return jsonify({"error": "Failed to parse resume file."}), 500
 
+    global RESUME_TEXT
+    RESUME_TEXT = cleaned_text
     return jsonify({"filename": filename, "text": cleaned_text})
 
 
