@@ -87,6 +87,45 @@ def extract_resume_text(file_bytes, filename):
 def parse_resume(file_bytes, filename):
     return extract_resume_text(file_bytes, filename)
 
+
+def generate_question(
+    resume_text,
+    job_role,
+    job_description,
+    required_skills,
+    previous_answers=None,
+):
+    prompt_sections = [
+        "You are an AI interviewer.",
+        "Ask exactly one interview question.",
+        "The question must be relevant to both the resume and the job role.",
+        "Do not include explanations or answers.",
+        "",
+        "Resume:",
+        resume_text,
+        "",
+        "Job Role:",
+        job_role,
+        "",
+        "Job Description:",
+        job_description,
+        "",
+        "Required Skills:",
+        ", ".join(required_skills),
+    ]
+
+    if previous_answers:
+        prompt_sections.extend(
+            [
+                "",
+                "Previous Answers:",
+                "\n".join(f"- {answer}" for answer in previous_answers),
+            ]
+        )
+
+    return "\n".join(prompt_sections).strip()
+
+
 def generate_interview_question(resume_text, job_role):
     messages = [
         {"role": "system", "content": QUESTION_SYSTEM_PROMPT.strip()},
@@ -189,7 +228,7 @@ def upload_resume():
 
 
 @app.route("/generate_question", methods=["POST"])
-def generate_question():
+def generate_question_route():
     data = request.get_json() or {}
     resume_text = data.get("resume_text", "").strip()
     job_role = data.get("job_role", "").strip()
