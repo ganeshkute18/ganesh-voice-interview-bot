@@ -16,7 +16,7 @@ JOB_DATA = None
 RESUME_TEXT = None
 
 # Groq client – reads GROQ_API_KEY from your environment
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=os.environ.get("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"))
 
 QUESTION_SYSTEM_PROMPT = """
 You generate concise, role-relevant interview questions based on a resume and job role.
