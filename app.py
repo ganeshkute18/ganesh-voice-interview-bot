@@ -244,5 +244,49 @@ def generate_question_route():
         return jsonify({"error": "Failed to generate interview question."}), 500
 
 
+@app.route("/ask-question", methods=["POST"])
+def ask_question():
+    data = request.get_json(silent=True) or {}
+    resume_text = data.get("resume_text", "").strip()
+    previous_answers = data.get("previous_answers", [])
+
+    if not resume_text:
+        return jsonify({"error": "resume_text is required."}), 400
+
+    if previous_answers is None:
+        previous_answers = []
+
+    if not isinstance(previous_answers, list) or not all(
+        isinstance(answer, str) for answer in previous_answers
+    ):
+        return jsonify({"error": "previous_answers must be a list of strings."}), 400
+
+    if not JOB_DATA:
+        return jsonify({"error": "Job data is required before asking questions."}), 400
+
+    try:
+        prompt = generate_question(
+            resume_text=resume_text,
+            job_role=JOB_DATA["role"],
+            job_description=JOB_DATA["description"],
+            required_skills=JOB_DATA["skills"],
+            previous_answers=previous_answers,
+        )
+        messages = [
+            {"role": "system", "content": QUESTION_SYSTEM_PROMPT.strip()},
+            {"role": "user", "content": prompt},
+        ]
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages,
+            temperature=0.7,
+        )
+        question = response.choices[0].message.content.strip()
+        return jsonify({"question": question})
+    except Exception as exc:
+        print("Ask-question error:", exc)
+        return jsonify({"error": "Failed to generate interview question."}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
