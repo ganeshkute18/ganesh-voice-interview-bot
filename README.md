@@ -20,6 +20,9 @@ A voice-based interview conducting application that leverages AI technology to f
 - **AI Integration**: Groq API
 - **Web Framework**: Utilizes a web framework for application structure
 
+## visit the webiste
+https://ganesh-voice-interview-bot.onrender.com/
+
 ## Installation
 
 1. Clone the repository:
@@ -54,7 +57,7 @@ No license information is provided in this repository.
 
 ## Contact
 
-For any inquiries, please reach out to the project maintainer at [your-email@example.com].
+For any inquiries, please reach out to the project maintainer at [ganeshyuvraj18@gmail.com].
 
 ---
 
