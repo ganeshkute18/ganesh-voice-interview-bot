@@ -2,308 +2,330 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Ganesh – Voice Interview Bot</title>
+  <title>Ganesh – AI Interview Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #1d4ed8;
+      --accent-soft: rgba(29, 78, 216, 0.08);
+      --success: #16a34a;
+      --warning: #f97316;
+      --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
     * {
       box-sizing: border-box;
-    }
-    body {
       margin: 0;
       padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      padding: 32px 18px 48px;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        radial-gradient(circle at 0% 0%, #1d4ed8 0, transparent 55%),
-        radial-gradient(circle at 100% 100%, #a855f7 0, transparent 55%),
-        #020617;
-      color: #e5e7eb;
+      flex-direction: column;
+      gap: 28px;
     }
-    .card {
-      width: 100%;
-      max-width: 720px;
-      padding: 24px 22px 18px;
-      border-radius: 22px;
-      background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.85));
-      border: 1px solid rgba(148,163,184,0.35);
-      box-shadow:
-        0 18px 45px rgba(15,23,42,0.7),
-        0 0 0 1px rgba(15,23,42,0.8);
-      backdrop-filter: blur(18px);
-    }
-    .header {
+
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
+      gap: 20px;
     }
-    .title-block h1 {
-      margin: 0;
-      font-size: 1.35rem;
-      letter-spacing: 0.04em;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
-    .title-block p {
-      margin: 3px 0 0;
-      font-size: 0.82rem;
-      color: #9ca3af;
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(140deg, #1d4ed8, #60a5fa);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.06em;
     }
-    .badge {
-      padding: 6px 10px;
+
+    .brand h1 {
+      font-size: 1.5rem;
+      font-weight: 650;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+
+    .status-pill {
+      padding: 8px 16px;
       border-radius: 999px;
-      font-size: 0.7rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 0.78rem;
+      color: var(--muted);
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      background: radial-gradient(circle at 0% 0%, #22c55e, #16a34a);
-      color: #022c22;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card h2 {
+      font-size: 1.05rem;
       font-weight: 600;
-      border: 1px solid rgba(34,197,94,0.5);
-      box-shadow: 0 0 15px rgba(34,197,94,0.5);
     }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 10px 0 4px;
-    }
-    button {
-      border: none;
-      padding: 8px 13px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
-      white-space: nowrap;
-    }
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    button:not(:disabled):active {
-      transform: scale(0.97);
-      box-shadow: none;
-    }
-    #recordBtn {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #022c22;
-      box-shadow: 0 0 18px rgba(34,197,94,0.5);
-    }
-    #stopListenBtn {
-      background: rgba(55,65,81,0.9);
-      color: #e5e7eb;
-    }
-    #stopVoiceBtn {
-      background: rgba(30,64,175,0.9);
-      color: #e5e7eb;
-    }
-    #clearBtn {
-      background: transparent;
-      color: #9ca3af;
-      border: 1px solid rgba(75,85,99,0.8);
-    }
-    #status {
-      min-height: 1.2em;
-      font-size: 0.78rem;
-      color: #a5b4fc;
-      margin-top: 2px;
-    }
-    .chips {
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .resume-card {
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(59,130,246,0.35);
-      background: rgba(15,23,42,0.85);
-    }
-    .resume-card h2 {
-      margin: 0 0 6px;
-      font-size: 0.9rem;
-      letter-spacing: 0.02em;
-    }
-    .resume-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    #resumeInput {
-      flex: 1;
-      min-width: 180px;
-      color: #cbd5f5;
-      background: rgba(15,23,42,0.95);
-      border: 1px dashed rgba(148,163,184,0.6);
-      border-radius: 10px;
-      padding: 6px 10px;
-    }
-    #uploadBtn {
-      background: linear-gradient(135deg, #f97316, #f59e0b);
-      color: #2a1200;
-      box-shadow: 0 0 16px rgba(249,115,22,0.5);
-    }
-    #resumeStatus {
-      min-height: 1em;
-      margin-top: 6px;
-      font-size: 0.75rem;
-      color: #fbbf24;
-    }
-    #resumeOutput {
-      margin-top: 8px;
-      width: 100%;
-      min-height: 120px;
-      border-radius: 12px;
-      border: 1px solid rgba(55,65,81,0.9);
-      padding: 10px 12px;
-      background: rgba(2,6,23,0.65);
-      color: #e2e8f0;
-      font-size: 0.8rem;
-      line-height: 1.5;
-      resize: vertical;
-    }
-    .chip {
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      border: 1px solid rgba(148,163,184,0.5);
-      color: #e5e7eb;
-      cursor: pointer;
-      background: rgba(15,23,42,0.9);
-      transition: background 0.15s ease, transform 0.08s ease, border-color 0.15s ease;
-    }
-    .chip:hover {
-      background: rgba(30,64,175,0.7);
-      border-color: #60a5fa;
-      transform: translateY(-1px);
-    }
-    #chat {
-      max-height: 330px;
-      overflow-y: auto;
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 16px;
-      background: radial-gradient(circle at 0% 0%, rgba(15,23,42,0.9), rgba(15,23,42,0.96));
-      border: 1px solid rgba(55,65,81,0.9);
-    }
-    .bubble {
-      padding: 9px 11px;
-      border-radius: 12px;
-      margin: 5px 0;
-      max-width: 82%;
+
+    .card p {
+      color: var(--muted);
       font-size: 0.85rem;
       line-height: 1.4;
-      position: relative;
     }
-    .user {
-      margin-left: auto;
-      background: linear-gradient(135deg, #1d4ed8, #38bdf8);
-      color: #e5f3ff;
-      border-radius: 12px 12px 2px 12px;
-    }
-    .bot {
-      margin-right: auto;
-      background: rgba(15,23,42,0.95);
-      border-radius: 12px 12px 12px 2px;
-      border: 1px solid rgba(148,163,184,0.5);
-    }
-    .role-label {
-      font-size: 0.65rem;
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      opacity: 0.6;
-      margin-bottom: 2px;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: block;
     }
-    #typedInput {
+
+    input,
+    textarea {
       width: 100%;
-      margin-top: 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(75,85,99,0.9);
-      padding: 9px 14px;
-      font-size: 0.85rem;
-      background: rgba(15,23,42,0.9);
-      color: #e5e7eb;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 0.92rem;
+      background: #fff;
+      color: var(--text);
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    textarea:focus {
       outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
-    #typedInput::placeholder {
-      color: #6b7280;
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
     }
-    #sendBtn {
-      margin-top: 8px;
-      width: 100%;
-      background: linear-gradient(135deg, #4f46e5, #06b6d4);
-      color: #e5e7eb;
-      box-shadow: 0 0 16px rgba(59,130,246,0.6);
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
     }
+
+    button {
+      border: none;
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(29, 78, 216, 0.25);
+    }
+
+    .secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .warning {
+      background: rgba(249, 115, 22, 0.1);
+      color: var(--warning);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .success {
+      background: rgba(22, 163, 74, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(22, 163, 74, 0.3);
+    }
+
+    .question-area {
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 180px;
+      background: #f8fafc;
+      overflow-y: auto;
+    }
+
+    .bubble {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .bubble .role-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    #status,
+    #resumeStatus {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    #resumeOutput {
+      min-height: 100px;
+      background: #f8fafc;
+    }
+
     .footer-note {
-      margin-top: 10px;
-      font-size: 0.72rem;
-      color: #9ca3af;
       text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
     }
-    @media (max-width: 640px) {
-      .card {
-        margin: 10px;
-        padding: 18px 16px 12px;
+
+    @media (max-width: 720px) {
+      body {
+        padding: 20px 14px 32px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="header">
-      <div class="title-block">
-        <h1>Ganesh – AI Interview Voice Bot</h1>
-        <p>Ask me interview questions by voice or text. I’ll answer as I would in a real interview.</p>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">AI</div>
+        <div>
+          <h1>Ganesh Interview Console</h1>
+          <p>Configure the role, add candidate details, and run a structured AI interview.</p>
+        </div>
       </div>
-      <div class="badge">AI Agent · 21</div>
-    </div>
+      <div class="status-pill">Enterprise Ready</div>
+    </header>
 
-    <div class="controls">
-      <button id="recordBtn">🎙️ Start Talking</button>
-      <button id="stopListenBtn" disabled>⏹️ Stop Listening</button>
-      <button id="stopVoiceBtn">🔇 Stop Voice</button>
-      <button id="clearBtn">🧹 Clear Chat</button>
-    </div>
-    <div id="status"></div>
-
-    <div class="chips">
-      <div class="chip">Tell me your life story.</div>
-      <div class="chip">What’s your #1 superpower?</div>
-      <div class="chip">Top 3 areas you want to grow in?</div>
-      <div class="chip">How do you push your limits?</div>
-      <div class="chip">Explain your missing person project.</div>
-    </div>
-
-    <div class="resume-card">
-      <h2>Resume Upload</h2>
-      <div class="resume-actions">
-        <input id="resumeInput" type="file" accept=".pdf,.docx" />
-        <button id="uploadBtn">📄 Upload Resume</button>
+    <section class="grid">
+      <div class="card">
+        <h2>Company Setup</h2>
+        <p>Capture the target role and interview rubric for consistent candidate evaluation.</p>
+        <div>
+          <label for="jobRole">Job Role</label>
+          <input id="jobRole" type="text" placeholder="Senior Product Designer" />
+        </div>
+        <div>
+          <label for="skills">Skills (comma separated)</label>
+          <input id="skills" type="text" placeholder="UX research, Prototyping, Design systems" />
+        </div>
+        <div>
+          <label for="jobDescription">Job Description</label>
+          <textarea id="jobDescription" placeholder="Outline responsibilities, expectations, and success metrics."></textarea>
+        </div>
+        <div class="actions">
+          <button class="primary" id="saveJobBtn">💾 Save Job</button>
+          <span id="status"></span>
+        </div>
       </div>
-      <div id="resumeStatus"></div>
-      <textarea id="resumeOutput" placeholder="Extracted resume text will appear here..." readonly></textarea>
-    </div>
 
-    <div id="chat"></div>
+      <div class="card">
+        <h2>Candidate Setup</h2>
+        <p>Upload a resume to pre-fill context for the AI interviewer.</p>
+        <div>
+          <label for="resumeInput">Resume Upload</label>
+          <input id="resumeInput" type="file" accept=".pdf,.docx" />
+        </div>
+        <div class="actions">
+          <button id="uploadBtn" class="secondary">⬆️ Upload Resume</button>
+          <span id="resumeStatus"></span>
+        </div>
+        <textarea id="resumeOutput" placeholder="Extracted resume text will appear here..." readonly></textarea>
+      </div>
 
-    <input id="typedInput" placeholder="Or type a question, e.g. “Why should 100x hire you?”" />
-    <button id="sendBtn">Send</button>
+      <div class="card">
+        <h2>Interview Section</h2>
+        <p>Launch the interview and review the latest AI-generated questions.</p>
+        <div id="chat" class="question-area"></div>
+        <div class="actions">
+          <button id="recordBtn" class="primary">▶️ Start Interview</button>
+          <button id="stopListenBtn" class="secondary" disabled>⏸️ Pause</button>
+          <button id="stopVoiceBtn" class="secondary">🔇 Mute Voice</button>
+          <button id="clearBtn" class="warning">🧹 Clear</button>
+        </div>
+      </div>
+    </section>
 
-    <div class="footer-note">
-      Tip: You can stop the voice at any time with “🔇 Stop Voice”.
-    </div>
+    <section class="card">
+      <h2>Manual Input</h2>
+      <p>Type a custom question or prompt to keep the interview moving.</p>
+      <input id="typedInput" placeholder="Type a question for the candidate..." />
+      <button id="sendBtn" class="success">Send Question</button>
+    </section>
+
+    <div class="footer-note">Tip: Use clear, role-specific questions for consistent scoring.</div>
   </div>
 
   <script>
@@ -315,7 +337,10 @@
     const chatEl = document.getElementById("chat");
     const typedInput = document.getElementById("typedInput");
     const sendBtn = document.getElementById("sendBtn");
-    const chips = document.querySelectorAll(".chip");
+    const saveJobBtn = document.getElementById("saveJobBtn");
+    const jobRole = document.getElementById("jobRole");
+    const skills = document.getElementById("skills");
+    const jobDescription = document.getElementById("jobDescription");
     const resumeInput = document.getElementById("resumeInput");
     const uploadBtn = document.getElementById("uploadBtn");
     const resumeStatus = document.getElementById("resumeStatus");
@@ -326,7 +351,6 @@
     let history = [];
     let selectedVoice = null;
 
-    // ---- Voice selection (younger / natural English voice) ----
     function loadVoices() {
       const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
       if (!voices || !voices.length) return;
@@ -342,7 +366,6 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // ---- Text-to-speech with stop support ----
     function speak(text) {
       if (!window.speechSynthesis) return;
 
@@ -360,19 +383,18 @@
     stopVoiceBtn.addEventListener("click", () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        statusEl.textContent = "Voice stopped.";
-        setTimeout(() => { if (statusEl.textContent === "Voice stopped.") statusEl.textContent = ""; }, 900);
+        statusEl.textContent = "Voice muted.";
+        setTimeout(() => { if (statusEl.textContent === "Voice muted.") statusEl.textContent = ""; }, 900);
       }
     });
 
-    // ---- Add message to chat UI ----
     function addMessage(text, role) {
       const wrapper = document.createElement("div");
-      wrapper.className = "bubble " + (role === "user" ? "user" : "bot");
+      wrapper.className = "bubble";
 
       const label = document.createElement("div");
       label.className = "role-label";
-      label.textContent = role === "user" ? "YOU" : "GANESH BOT";
+      label.textContent = role === "user" ? "INTERVIEWER" : "AI";
 
       const body = document.createElement("div");
       body.textContent = text;
@@ -386,7 +408,6 @@
       history.push({ role: role === "user" ? "user" : "assistant", content: text });
     }
 
-    // ---- Speech recognition ----
     function setupRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -402,7 +423,7 @@
 
       recognition.onstart = () => {
         recognizing = true;
-        statusEl.textContent = "Listening… ask your question.";
+        statusEl.textContent = "Listening for the next question...";
       };
       recognition.onend = () => {
         recognizing = false;
@@ -426,7 +447,6 @@
       };
     }
 
-    // ---- Send text to backend ----
     async function sendToServer(message) {
       statusEl.textContent = "Thinking…";
       try {
@@ -479,7 +499,40 @@
       }
     }
 
-    // ---- Event listeners ----
+    async function saveJob() {
+      const payload = {
+        role: jobRole.value.trim(),
+        description: jobDescription.value.trim(),
+        skills: skills.value
+          .split(",")
+          .map(skill => skill.trim())
+          .filter(Boolean),
+      };
+
+      if (!payload.role || !payload.description || payload.skills.length === 0) {
+        statusEl.textContent = "Please complete role, skills, and description.";
+        return;
+      }
+
+      statusEl.textContent = "Saving job profile...";
+      try {
+        const res = await fetch("/set-job", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Unable to save job profile.";
+          return;
+        }
+        statusEl.textContent = "Job profile saved.";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error while saving.";
+      }
+    }
+
     recordBtn.addEventListener("click", () => {
       if (!recognition) return;
       if (!recognizing) {
@@ -513,19 +566,12 @@
     clearBtn.addEventListener("click", () => {
       chatEl.innerHTML = "";
       history = [];
-      statusEl.textContent = "Chat cleared.";
+      statusEl.textContent = "Interview log cleared.";
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      setTimeout(() => { if (statusEl.textContent === "Chat cleared.") statusEl.textContent = ""; }, 900);
+      setTimeout(() => { if (statusEl.textContent === "Interview log cleared.") statusEl.textContent = ""; }, 900);
     });
 
-    chips.forEach(chip => {
-      chip.addEventListener("click", () => {
-        const text = chip.textContent.trim();
-        addMessage(text, "user");
-        sendToServer(text);
-      });
-    });
-
+    saveJobBtn.addEventListener("click", saveJob);
     uploadBtn.addEventListener("click", uploadResume);
 
     setupRecognition();
